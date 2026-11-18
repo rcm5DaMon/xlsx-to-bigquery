@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XLSX → BigQuery CSV Converter</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1d2433; --muted: #5f6b7e; --line: #e2e6ec;
+    --accent: #1a73e8; --accent-ink: #ffffff; --accent-soft: #e8f0fe;
+    --ok: #188038; --ok-soft: #e6f4ea; --warn: #b06000; --warn-soft: #fef7e0; --bad: #c5221f; --bad-soft: #fce8e6;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { background: var(--card); border-bottom: 1px solid var(--line); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+  header .wrap { display: flex; align-items: center; gap: 14px; padding-top: 18px; padding-bottom: 18px; }
+  .logo { width: 40px; height: 40px; border-radius: 10px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 15px; flex: none; }
+  h1 { font-size: 20px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; }
+  main { padding: 22px 0 60px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 18px; }
+  .card h2 { font-size: 16px; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; }
+  .step { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: inline-grid; place-items: center; font-size: 13px; font-weight: 700; }
+  .card > p.hint { color: var(--muted); margin: 0 0 14px 34px; font-size: 13px; }
+  .drop { border: 2px dashed #c3cad5; border-radius: 12px; padding: 34px 20px; text-align: center; cursor: pointer; transition: .15s; background: #fafbfc; }
+  .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop strong { font-size: 15px; }
+  .drop .muted { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .fileinfo { display: none; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; margin-top: 14px; }
+  .fileinfo .name { font-weight: 600; word-break: break-all; }
+  .fileinfo .size { color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 14px; }
+  label.f { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--muted); }
+  select, input[type=text], input[type=number] { font: inherit; color: var(--ink); padding: 7px 9px; border: 1px solid #c9d0da; border-radius: 7px; background: #fff; min-width: 0; }
+  select:focus, input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .checks { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; font-size: 13px; }
+  .checks label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  button { font: inherit; font-weight: 600; border-radius: 8px; padding: 9px 16px; border: 1px solid transparent; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); }
+  button.primary:hover { filter: brightness(.95); }
+  button.ghost { background: #fff; border-color: #c9d0da; color: var(--ink); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .progress { display: none; margin-top: 16px; }
+  .bar { height: 8px; background: #e9edf2; border-radius: 99px; overflow: hidden; }
+  .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .plabel { font-size: 13px; color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; }
+  .error { display: none; margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: var(--bad-soft); color: var(--bad); }
+  .hidden { display: none !important; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 6px 0 16px; }
+  .stat { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .stat .v { font-size: 22px; font-weight: 700; }
+  .stat .l { font-size: 12px; color: var(--muted); }
+  .issues { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 6px; }
+  .issues li { padding: 8px 12px; border-radius: 8px; font-size: 13px; display: flex; gap: 8px; }
+  .issues li.fix { background: var(--ok-soft); }
+  .issues li.warn { background: var(--warn-soft); }
+  .issues li b { white-space: nowrap; }
+  .tablewrap { overflow: auto; border: 1px solid var(--line); border-radius: 10px; max-height: 560px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { position: sticky; top: 0; background: #f1f3f6; font-weight: 600; z-index: 1; white-space: nowrap; }
+  tr.off td { opacity: .45; }
+  td.mono, .mono { font-family: var(--mono); font-size: 12px; }
+  td input[type=text] { width: 100%; font-family: var(--mono); font-size: 12px; padding: 5px 7px; }
+  td select { font-size: 12px; padding: 5px 6px; }
+  td input.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: #eef1f5; color: var(--muted); margin: 0 4px 3px 0; }
+  .notes { color: var(--muted); font-size: 12px; min-width: 260px; }
+  .notes div + div { margin-top: 2px; }
+  .changed { color: var(--warn); font-weight: 600; }
+  .preview td { white-space: nowrap; font-family: var(--mono); font-size: 12px; }
+  .preview td.fail { background: var(--bad-soft); color: var(--bad); }
+  .preview td.null { color: #b0b7c3; }
+  .tabs { display: flex; gap: 6px; margin: 4px 0 10px; }
+  .tabs button { background: #fff; border: 1px solid var(--line); font-weight: 500; padding: 6px 12px; font-size: 13px; }
+  .tabs button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .downloads { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 10px 0 18px; }
+  .dl { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .dl .t { font-weight: 600; }
+  .dl .d { color: var(--muted); font-size: 12px; flex: 1; }
+  a.btn { display: block; text-align: center; text-decoration: none; font-weight: 600; border-radius: 8px; padding: 9px 16px; border: 1px solid #c9d0da; color: var(--ink); background: #fff; }
+  a.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  a.btn:hover { filter: brightness(.96); }
+  .dl.rec { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .rec-tag { font-size: 11px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+  pre { background: #0f1724; color: #e5e9f0; padding: 14px; border-radius: 10px; overflow: auto; font-size: 12px; margin: 6px 0 0; max-height: 260px; }
+  .codehead { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+  .codehead b { font-size: 14px; }
+  .small { font-size: 12px; padding: 5px 10px; }
+  ol.how { margin: 8px 0 0; padding-left: 20px; }
+  ol.how li { margin-bottom: 5px; }
+  .warnbox { padding: 10px 14px; border-radius: 8px; background: var(--warn-soft); color: #6d3f00; font-size: 13px; margin-bottom: 12px; }
+  .okbox { padding: 10px 14px; border-radius: 8px; background: var(--ok-soft); color: #0d5226; font-size: 13px; margin-bottom: 12px; }
+  footer { color: var(--muted); font-size: 12px; text-align: center; padding: 10px 0 30px; }
+  code { font-family: var(--mono); font-size: 12px; background: #eef1f5; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="logo">BQ</div>
+    <div>
+      <h1>XLSX → BigQuery CSV Converter</h1>
+      <div class="sub">Cleans an Excel export so it loads into BigQuery first time. Runs entirely in your browser, so the file is never uploaded anywhere.</div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- STEP 1 -->
+  <section class="card">
+    <h2><span class="step">1</span> Choose your Excel file</h2>
+    <p class="hint">.xlsx or .xlsm. Large SAP exports (hundreds of thousands of rows) are fine; they just take a minute.</p>
+    <div class="drop" id="drop">
+      <strong>Drop the .xlsx file here</strong>
+      <div class="muted">or click to browse</div>
+      <input type="file" id="file" accept=".xlsx,.xlsm" hidden>
+    </div>
+    <div class="fileinfo" id="fileinfo">
+      <div style="flex:1"><div class="name" id="fname"></div><div class="size" id="fsize"></div></div>
+      <button class="ghost small" id="change">Change file</button>
+    </div>
+
+    <div id="optsBox" class="hidden">
+      <div class="grid">
+        <label class="f">Sheet <select id="sheet"></select></label>
+        <label class="f">Header row number <input type="number" id="headerRow" min="1" value="1"></label>
+        <label class="f">Text date order (for dates typed as text)
+          <select id="dateOrder"><option value="auto">Auto-detect (default DD/MM/YYYY)</option><option value="DMY">DD/MM/YYYY</option><option value="MDY">MM/DD/YYYY</option></select>
+        </label>
+        <label class="f">Number style (for numbers typed as text)
+          <select id="numberFormat"><option value="auto">Auto-detect</option><option value="US">1,234.56 (comma thousands)</option><option value="EU">1.234,56 (dot thousands)</option></select>
+        </label>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="removeLineBreaks" checked> Replace line breaks inside cells with a space</label>
+        <label><input type="checkbox" id="trim" checked> Trim spaces at the start/end of text</label>
+      </div>
+      <div class="actions">
+        <button class="primary" id="analyseBtn">Check file</button>
+      </div>
+    </div>
+
+    <div class="progress" id="progress">
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="plabel"><span id="plabel">Starting…</span><span id="ppct"></span></div>
+    </div>
+    <div class="error" id="error"></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="card hidden" id="step2">
+    <h2><span class="step">2</span> Review what was found</h2>
+    <p class="hint">The fixes below are applied automatically. You can rename a column, change its type or leave it out before creating the files.</p>
+    <div class="stats" id="stats"></div>
+    <ul class="issues" id="issues"></ul>
+
+    <div class="tabs">
+      <button class="on" data-tab="cols">Columns &amp; types</button>
+      <button data-tab="prev">Preview of cleaned data</button>
+    </div>
+    <div class="tablewrap" id="tab-cols">
+      <table id="colTable">
+        <thead><tr><th>Load</th><th>#</th><th>Excel header</th><th>BigQuery column name</th><th>Type</th><th>Filled</th><th>What was found / fixed</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="tablewrap hidden preview" id="tab-prev">
+      <table id="prevTable"><thead></thead><tbody></tbody></table>
+    </div>
+    <div class="actions">
+      <button class="primary" id="buildBtn">Create BigQuery files</button>
+      <span class="sub" id="buildHint"></span>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="card hidden" id="step3">
+    <h2><span class="step">3</span> Download &amp; load into BigQuery</h2>
+    <p class="hint" id="doneHint"></p>
+    <div id="failBox"></div>
+    <div class="downloads">
+      <div class="dl rec">
+        <span class="rec-tag">Recommended</span>
+        <div class="t">Compressed CSV (.csv.gz)</div>
+        <div class="d" id="gzDesc">Upload this file to BigQuery as it is, without unzipping it. It is small enough for the console upload.</div>
+        <a class="btn primary" id="gzLink">Download .csv.gz</a>
+      </div>
+      <div class="dl">
+        <div class="t">Schema (schema.json)</div>
+        <div class="d">Column names and types. Paste it into the BigQuery schema box ("Edit as text") or use it with <code>bq load</code>.</div>
+        <a class="btn ghost" id="schemaLink">Download schema.json</a>
+      </div>
+      <div class="dl">
+        <div class="t">Plain CSV (.csv)</div>
+        <div class="d" id="csvDesc">The same data uncompressed, if you want to open it or use another tool.</div>
+        <a class="btn ghost" id="csvLink">Download .csv</a>
+      </div>
+    </div>
+
+    <div class="codehead"><b>Schema: paste into "Edit as text"</b><button class="ghost small" data-copy="schemaText">Copy</button></div>
+    <pre id="schemaText"></pre>
+
+    <div class="codehead"><b>Upload in the BigQuery console</b></div>
+    <ol class="how">
+      <li>Open <a href="https://console.cloud.google.com/bigquery" target="_blank" rel="noopener">BigQuery</a>, click <b>⋮</b> next to your dataset, then <b>Create table</b>.</li>
+      <li>Create table from <b>Upload</b>, choose the <b>.csv.gz</b> file, set File format to <b>CSV</b>.</li>
+      <li>Type the table name. In Schema, leave Auto detect off, turn on <b>Edit as text</b> and paste the schema above.</li>
+      <li>Open <b>Advanced options</b> and set <b>Header rows to skip = 1</b>.</li>
+      <li>To add a later period to the same table, pick the existing table and set Write preference to <b>Append to table</b>.</li>
+    </ol>
+
+    <div class="codehead"><b>Or with the bq command line</b><button class="ghost small" data-copy="bqCmd">Copy</button></div>
+    <div class="grid" style="margin-top:8px">
+      <label class="f">Project <input type="text" id="bqProject" value="e-smart-433113"></label>
+      <label class="f">Dataset <input type="text" id="bqDataset" placeholder="your_dataset"></label>
+      <label class="f">Table <input type="text" id="bqTable"></label>
+      <label class="f">If table exists
+        <select id="bqMode"><option value="">Fail (new table only)</option><option value="--replace">Replace the table</option><option value="--noreplace">Append rows</option></select>
+      </label>
+    </div>
+    <pre id="bqCmd"></pre>
+  </section>
+</main>
+<footer>Your file is processed only in this browser tab and is never uploaded anywhere.</footer>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const TYPES = ['STRING', 'INT64', 'NUMERIC', 'FLOAT64', 'DATE', 'DATETIME', 'TIME', 'BOOL'];
+  const worker = new Worker('converter.js');
+  let file = null, sheets = [], analysis = null, columns = [], outputs = {}, busy = false;
+
+  const fmtBytes = b => b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
+  const fmtInt = n => n.toLocaleString('en-US');
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const baseName = () => (file ? file.name.replace(/\.[^.]+$/, '') : 'data');
+  const tableName = () => baseName().toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').replace(/^(\d)/, 't_$1');
+
+  function opts() {
+    return { headerRow: Math.max(1, parseInt($('headerRow').value, 10) || 1), dateOrder: $('dateOrder').value, numberFormat: $('numberFormat').value, removeLineBreaks: $('removeLineBreaks').checked, trim: $('trim').checked };
+  }
+  function setBusy(b, label) {
+    busy = b;
+    $('analyseBtn').disabled = b; $('buildBtn').disabled = b;
+    $('progress').style.display = b ? 'block' : 'none';
+    if (b) { $('barFill').style.width = '0%'; $('plabel').textContent = label || 'Working…'; $('ppct').textContent = ''; }
+  }
+  function showError(msg) { const e = $('error'); e.textContent = msg; e.style.display = msg ? 'block' : 'none'; }
+
+  /* ---------- file selection ---------- */
+  const drop = $('drop');
+  drop.onclick = () => $('file').click();
+  $('change').onclick = () => $('file').click();
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+  drop.ondragleave = () => drop.classList.remove('over');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files[0]) pick(e.dataTransfer.files[0]); };
+  $('file').onchange = e => { if (e.target.files[0]) pick(e.target.files[0]); e.target.value = ''; };
+
+  function pick(f) {
+    if (busy) return;
+    showError('');
+    if (/\.xls$/i.test(f.name)) { showError('This is an old .xls file. Open it in Excel and use Save As → Excel Workbook (.xlsx), then choose the new file.'); return; }
+    if (/\.csv$/i.test(f.name)) { showError('This page converts .xlsx files. For a CSV, open it in Excel, save as .xlsx, then choose it here.'); return; }
+    file = f;
+    $('fname').textContent = f.name; $('fsize').textContent = fmtBytes(f.size);
+    drop.style.display = 'none'; $('fileinfo').style.display = 'flex';
+    $('step2').classList.add('hidden'); $('step3').classList.add('hidden');
+    $('bqTable').value = tableName();
+    setBusy(true, 'Opening file…');
+    worker.postMessage({ cmd: 'open', file });
+  }
+
+  /* ---------- worker messages ---------- */
+  worker.onmessage = ev => {
+    const m = ev.data;
+    if (m.type === 'progress') {
+      $('plabel').textContent = m.label;
+      const pct = Math.round(m.frac * 100);
+      $('barFill').style.width = pct + '%'; $('ppct').textContent = pct + '%';
+    } else if (m.type === 'error') {
+      setBusy(false); showError('Something went wrong: ' + m.message);
+    } else if (m.type === 'opened') {
+      setBusy(false);
+      sheets = m.sheets;
+      const sel = $('sheet'); sel.innerHTML = '';
+      sheets.forEach((s, i) => { const o = document.createElement('option'); o.value = i; o.textContent = s.name + (s.state !== 'visible' ? ' (hidden)' : ''); sel.appendChild(o); });
+      const firstVisible = sheets.findIndex(s => s.state === 'visible');
+      sel.value = String(Math.max(0, firstVisible));
+      $('optsBox').classList.remove('hidden');
+      if (!sheets.length) showError('No sheets found in this file.');
+    } else if (m.type === 'analysed') {
+      setBusy(false);
+      analysis = m;
+      columns = m.columns.map(c => Object.assign({}, c, { include: true }));
+      renderAnalysis(m.preview);
+      $('step2').classList.remove('hidden');
+      $('step2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (m.type === 'preview') {
+      renderPreview(m.preview);
+    } else if (m.type === 'built') {
+      setBusy(false);
+      renderOutputs(m);
+    }
+  };
+
+  $('analyseBtn').onclick = () => {
+    if (!file || busy) return;
+    showError(''); $('step2').classList.add('hidden'); $('step3').classList.add('hidden');
+    setBusy(true, 'Reading file…');
+    worker.postMessage({ cmd: 'analyse', file, sheetPath: sheets[+$('sheet').value].path, opts: opts() });
+  };
+
+  /* ---------- step 2 rendering ---------- */
+  function renderAnalysis(preview) {
+    const renamed = columns.filter(c => c.name !== c.original).length;
+    const empty = columns.filter(c => c.nonEmpty === 0).length;
+    const typed = {}; columns.forEach(c => typed[c.type] = (typed[c.type] || 0) + 1);
+    $('stats').innerHTML = [
+      [fmtInt(analysis.rows), 'data rows'],
+      [columns.length, 'columns'],
+      [renamed, 'headers renamed'],
+      [(typed.DATE || 0) + (typed.DATETIME || 0) + (typed.TIME || 0), 'date / time columns'],
+      [(typed.INT64 || 0) + (typed.NUMERIC || 0) + (typed.FLOAT64 || 0), 'number columns']
+    ].map(([v, l]) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+
+    // global issue summary
+    const items = [];
+    const sumNote = (re) => columns.reduce((a, c) => { c.notes.forEach(n => { const m = n.match(re); if (m) a += +m[1]; }); return a; }, 0);
+    const dupCols = columns.filter(c => c.notes.some(n => /appears \d+ times/.test(n)));
+    const badChar = columns.filter(c => c.notes.some(n => /characters BigQuery/.test(n)));
+    const emptyHdr = columns.filter(c => c.notes.some(n => /Header was empty/.test(n)));
+    if (dupCols.length) items.push(['fix', 'Duplicate headers', `${dupCols.length} columns share a name with another column. BigQuery needs unique names, so these get _2, _3… added.`]);
+    if (badChar.length) items.push(['fix', 'Invalid characters', `${badChar.length} headers contain spaces, dots, slashes or other symbols. These are replaced with _ (e.g. ${esc(badChar[0].original)} → ${esc(badChar[0].name)}).`]);
+    if (emptyHdr.length) items.push(['fix', 'Empty headers', `${emptyHdr.length} columns had no header and were named column_N.`]);
+    const dateCols = columns.filter(c => c.type === 'DATE' || c.type === 'DATETIME');
+    if (dateCols.length) items.push(['fix', 'Dates', `${dateCols.length} date columns will be written as YYYY-MM-DD, the format BigQuery expects.`]);
+    const timeCols = columns.filter(c => c.type === 'TIME');
+    if (timeCols.length) items.push(['fix', 'Times', `${timeCols.length} time columns will be written as HH:MM:SS.`]);
+    const nl = sumNote(/^(\d+) cell\(s\) had line breaks/);
+    if (nl) items.push(['fix', 'Line breaks', `${fmtInt(nl)} cells contain line breaks, which would split rows in a CSV. They are replaced with a space.`]);
+    const nt = sumNote(/^(\d+) number\(s\) stored as text/);
+    if (nt) items.push(['fix', 'Numbers stored as text', `${fmtInt(nt)} values like "1,059.350" will be written as plain numbers.`]);
+    const star = sumNote(/^(\d+) value\(s\) had a leading \*/);
+    if (star) items.push(['warn', 'SAP overflow (*)', `${star} values start with * (SAP adds this when a number is too wide for the field). The * is removed, but these figures may be cut off, so check them in SAP.`]);
+    const tm = sumNote(/^(\d+) value\(s\) used SAP trailing minus/);
+    if (tm) items.push(['fix', 'Trailing minus', `${tm} negative values written as 5- are changed to -5.`]);
+    const err = sumNote(/^(\d+) Excel error cell/);
+    if (err) items.push(['warn', 'Excel errors', `${fmtInt(err)} cells contain #N/A, #VALUE! or similar errors. They are loaded as empty.`]);
+    const ids = columns.filter(c => c.notes.some(n => /Codes\/IDs/.test(n)));
+    if (ids.length) items.push(['fix', 'Codes kept as text', `${ids.length} code/ID columns (e.g. ${esc(ids.slice(0, 3).map(c => c.name).join(', '))}) are kept as STRING so leading zeros aren't lost.`]);
+    const mixed = columns.filter(c => c.notes.some(n => /^Mixed/.test(n)));
+    if (mixed.length) items.push(['warn', 'Mixed columns', `${mixed.length} columns mix numbers or dates with text (${esc(mixed.slice(0, 4).map(c => c.name).join(', '))}). They are loaded as STRING.`]);
+    const amb = columns.filter(c => c.notes.some(n => /ambiguous/.test(n)));
+    if (amb.length) items.push(['warn', 'Date order', `In ${esc(amb.map(c => c.name).join(', '))}, it isn't clear whether text dates are day-first or month-first. They are read as DD/MM/YYYY.`]);
+    if (empty) items.push(['warn', 'Empty columns', `${empty} columns have no values at all. They are loaded as STRING (NULL); untick them to leave them out.`]);
+    if (analysis.blankRows) items.push(['fix', 'Blank rows', `${fmtInt(analysis.blankRows)} completely empty rows will be skipped.`]);
+    $('issues').innerHTML = items.length ? items.map(([k, t, d]) => `<li class="${k}"><b>${k === 'fix' ? '✓' : '⚠'} ${t}:</b><span>${d}</span></li>`).join('') : '<li class="fix"><b>✓</b><span>No problems found. The file is ready to load.</span></li>';
+
+    renderColumns();
+    renderPreview(preview);
+  }
+
+  function renderColumns() {
+    const tb = $('colTable').querySelector('tbody');
+    tb.innerHTML = columns.map((c, i) => `
+      <tr data-i="${i}" class="${c.include ? '' : 'off'}">
+        <td><input type="checkbox" class="inc" ${c.include ? 'checked' : ''}></td>
+        <td>${i + 1}</td>
+        <td class="mono">${esc(c.original) || '<span class="tag">empty</span>'}</td>
+        <td><input type="text" class="nm" value="${esc(c.name)}"></td>
+        <td><select class="ty">${TYPES.map(t => `<option ${t === c.type ? 'selected' : ''}>${t}</option>`).join('')}</select>
+            ${c.type !== c.detected ? `<div class="changed" style="font-size:11px">changed from ${c.detected}</div>` : ''}</td>
+        <td>${analysis.rows ? Math.round(c.nonEmpty / analysis.rows * 100) : 0}%</td>
+        <td class="notes">${c.notes.map(n => `<div>${esc(n)}</div>`).join('') || '<span style="color:#b0b7c3">nothing to fix</span>'}</td>
+      </tr>`).join('');
+    validateNames();
+  }
+  $('colTable').addEventListener('change', e => {
+    const tr = e.target.closest('tr'); if (!tr) return;
+    const c = columns[+tr.dataset.i];
+    if (e.target.classList.contains('inc')) { c.include = e.target.checked; tr.classList.toggle('off', !c.include); requestPreview(); }
+    if (e.target.classList.contains('ty')) { c.type = e.target.value; renderColumns(); requestPreview(); }
+    if (e.target.classList.contains('nm')) { c.name = e.target.value.trim(); validateNames(); requestPreview(); }
+  });
+  function validateNames() {
+    const seen = {}; let bad = 0;
+    document.querySelectorAll('#colTable tbody tr').forEach(tr => {
+      const c = columns[+tr.dataset.i]; const inp = tr.querySelector('.nm');
+      let ok = /^[A-Za-z_][A-Za-z0-9_]{0,299}$/.test(c.name) && !/^(_TABLE_|_FILE_|_PARTITION|_ROW_TIMESTAMP|__ROOT__|_COLIDENTIFIER)/i.test(c.name);
+      if (c.include) { const k = c.name.toLowerCase(); if (seen[k]) ok = false; seen[k] = 1; }
+      inp.classList.toggle('bad', c.include && !ok);
+      inp.title = ok ? '' : 'Use letters, numbers and _ only, start with a letter or _, and keep names unique';
+      if (c.include && !ok) bad++;
+    });
+    const n = columns.filter(c => c.include).length;
+    $('buildBtn').disabled = busy || bad > 0 || n === 0;
+    $('buildHint').textContent = bad ? `Fix ${bad} column name(s) highlighted in red first.` : `${n} of ${columns.length} columns will be loaded.`;
+    return bad === 0;
+  }
+  let pvTimer = null;
+  function requestPreview() {
+    clearTimeout(pvTimer);
+    pvTimer = setTimeout(() => worker.postMessage({ cmd: 'preview', columns: columns.filter(c => c.include), opts: opts() }), 150);
+  }
+  function renderPreview(rows) {
+    const cols = columns.filter(c => c.include);
+    $('prevTable').querySelector('thead').innerHTML = '<tr>' + cols.map(c => `<th>${esc(c.name)}<div style="font-weight:400;color:var(--muted);font-size:11px">${c.type}</div></th>`).join('') + '</tr>';
+    $('prevTable').querySelector('tbody').innerHTML = rows.map(r => '<tr>' + r.map(v => v.startsWith('⚠ ') ? `<td class="fail" title="Can't be converted to this type, so it will load as empty">${esc(v)}</td>` : v === '' ? '<td class="null">NULL</td>' : `<td>${esc(v)}</td>`).join('') + '</tr>').join('');
+  }
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+    $('tab-cols').classList.toggle('hidden', b.dataset.tab !== 'cols');
+    $('tab-prev').classList.toggle('hidden', b.dataset.tab !== 'prev');
+  });
+
+  /* ---------- build ---------- */
+  $('buildBtn').onclick = () => {
+    if (busy || !validateNames()) return;
+    $('step3').classList.add('hidden');
+    setBusy(true, 'Creating files…');
+    worker.postMessage({ cmd: 'build', file, sheetPath: sheets[+$('sheet').value].path, opts: opts(), columns: columns.filter(c => c.include) });
+  };
+
+  function schemaJson() {
+    return JSON.stringify(columns.filter(c => c.include).map(c => ({ name: c.name, type: c.type, mode: 'NULLABLE' })), null, 2);
+  }
+  function renderOutputs(m) {
+    Object.values(outputs).forEach(u => URL.revokeObjectURL(u));
+    const schema = schemaJson();
+    outputs = { gz: URL.createObjectURL(m.gz), csv: URL.createObjectURL(m.csv), schema: URL.createObjectURL(new Blob([schema], { type: 'application/json' })) };
+    const b = baseName();
+    const set = (id, url, name) => { const a = $(id); a.href = url; a.download = name; };
+    set('gzLink', outputs.gz, b + '_bq.csv.gz'); set('csvLink', outputs.csv, b + '_bq.csv'); set('schemaLink', outputs.schema, b + '_schema.json');
+    $('gzDesc').textContent = `${fmtBytes(m.gz.size)}. Upload it to BigQuery as it is, without unzipping it.` + (m.gz.size > 100 * 1048576 ? ' Over 100 MB, so the console upload will refuse it. Put it in a Cloud Storage bucket first, or use bq load.' : '');
+    $('csvDesc').textContent = `${fmtBytes(m.csv.size)}. The same data uncompressed.` + (m.csv.size > 100 * 1048576 ? ' Too big for the console upload (100 MB limit), so use the .gz file.' : '');
+    $('schemaText').textContent = schema;
+    $('doneHint').textContent = `${fmtInt(m.rows)} rows × ${columns.filter(c => c.include).length} columns are ready.`;
+    $('failBox').innerHTML = m.failures.length
+      ? `<div class="warnbox"><b>⚠ Some values didn't fit the chosen type and were left empty:</b><br>${m.failures.map(f => `${esc(f.name)} (${f.type}): ${fmtInt(f.count)} value(s), e.g. ${f.examples.map(x => '"' + esc(x) + '"').join(', ')}`).join('<br>')}<br>To keep them, change those columns to STRING in step 2 and create the files again.</div>`
+      : '<div class="okbox">✓ Every value matched its column type. BigQuery should load this without errors.</div>';
+    updateCmd();
+    $('step3').classList.remove('hidden');
+    $('step3').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function updateCmd() {
+    const p = $('bqProject').value.trim() || 'PROJECT', d = $('bqDataset').value.trim() || 'YOUR_DATASET', t = $('bqTable').value.trim() || 'YOUR_TABLE';
+    const mode = $('bqMode').value;
+    const b = baseName();
+    $('bqCmd').textContent = `bq load --source_format=CSV --skip_leading_rows=1${mode ? ' ' + mode : ''} \\\n  ${p}:${d}.${t} \\\n  "${b}_bq.csv.gz" "${b}_schema.json"`;
+  }
+  ['bqProject', 'bqDataset', 'bqTable', 'bqMode'].forEach(id => $(id).addEventListener('input', updateCmd));
+  document.querySelectorAll('[data-copy]').forEach(btn => btn.onclick = async () => {
+    try { await navigator.clipboard.writeText($(btn.dataset.copy).textContent); btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = 'Copy', 1500); } catch (e) { }
+  });
+})();
+</script>
+</body>
+</html>
