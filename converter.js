@@ -404,7 +404,7 @@ function decideType(st, opts, name) {
     else if (st.maxB > 12 && st.maxA <= 12) info.dateOrder = 'MDY';
     else { info.dateOrder = 'DMY'; if (st.maxA <= 12 && st.maxB <= 12) notes.push('Day/month order is ambiguous in this column → read as DD/MM/YYYY (change "Text date order" if wrong)'); }
   }
-  if (st.bool === N) { info.type = 'BOOL'; return info; }
+  if (st.bool === N) { info.type = 'BOOLEAN'; return info; }
   const dateish = st.dInt + st.dDT + st.dtext;
   if (dateish > 0 && dateish === N) {
     info.type = (st.dDT + st.dtextTime) > 0 ? 'DATETIME' : 'DATE';
@@ -429,9 +429,9 @@ function decideType(st, opts, name) {
     const ntDec = nf === 'US' ? st.ntDecUS : st.ntDecEU;
     const maxDec = Math.max(st.numMaxDec, ntDec);
     const allInt = st.numInt === st.num && ntDec === 0;
-    if (allInt && st.numMaxAbs < 9.2e18) info.type = 'INT64';
+    if (allInt && st.numMaxAbs < 9.2e18) info.type = 'INTEGER';
     else if (maxDec <= 9 && st.numMaxAbs < 1e28) info.type = 'NUMERIC';
-    else info.type = 'FLOAT64';
+    else info.type = 'FLOAT';
     if (st.numtext) notes.push(st.numtext + ' number(s) stored as text' + (nf === 'US' ? ' (1,234.56 style)' : ' (1.234,56 style)') + ' → converted to plain numbers');
     if (st.star) notes.push(st.star + ' value(s) had a leading * (SAP overflow marker) → removed; check these values');
     if (st.trailMinus) notes.push(st.trailMinus + ' value(s) used SAP trailing minus (e.g. 5-) → converted to -5');
@@ -508,15 +508,15 @@ function validDate(p) { return p && p.m >= 1 && p.m <= 12 && p.d >= 1 && p.d <= 
 function formatCell(cell, col, opts, date1904) {
   if (!cell || cell.k === 'e') return '';
   const T = col.type;
-  if (cell.k === 'b') return T === 'BOOL' || T === 'STRING' ? (cell.v ? 'true' : 'false') : (T === 'INT64' || T === 'NUMERIC' || T === 'FLOAT64' ? (cell.v ? '1' : '0') : null);
+  if (cell.k === 'b') return T === 'BOOLEAN' || T === 'STRING' ? (cell.v ? 'true' : 'false') : (T === 'INTEGER' || T === 'NUMERIC' || T === 'FLOAT' ? (cell.v ? '1' : '0') : null);
   if (cell.k === 'n') {
     const v = cell.v;
     switch (T) {
       case 'DATE': return fmtDate(serialToParts(v, date1904));
       case 'DATETIME': { const p = serialToParts(v, date1904); return fmtDate(p) + ' ' + fmtTime(p); }
       case 'TIME': { const p = serialToParts(v - Math.floor(v), date1904); if (p.hh === 0 && v - Math.floor(v) > 0.5) { p.hh = 23; p.mi = 59; p.ss = 59; } return fmtTime(p); }
-      case 'INT64': return Number.isInteger(v) ? fmtNum(v, T) : null;
-      case 'BOOL': return v === 1 ? 'true' : v === 0 ? 'false' : null;
+      case 'INTEGER': return Number.isInteger(v) ? fmtNum(v, T) : null;
+      case 'BOOLEAN': return v === 1 ? 'true' : v === 0 ? 'false' : null;
       case 'STRING':
         if (cell.df) { const p = serialToParts(v, date1904); if (cell.df === 2 || (v >= 0 && v < 1)) return fmtTime(p); return Number.isInteger(v) ? fmtDate(p) : fmtDate(p) + ' ' + fmtTime(p); }
         return fmtNum(v, T);
@@ -528,16 +528,16 @@ function formatCell(cell, col, opts, date1904) {
   if (s === '') return '';
   switch (T) {
     case 'STRING': return s;
-    case 'INT64': case 'NUMERIC': case 'FLOAT64': {
+    case 'INTEGER': case 'NUMERIC': case 'FLOAT': {
       const n = parseNumText(s, col.numFormat || 'US');
       if (n === null) return null;
-      if (T === 'INT64' && !Number.isInteger(n)) return null;
+      if (T === 'INTEGER' && !Number.isInteger(n)) return null;
       return fmtNum(n, T);
     }
     case 'DATE': { const p = parseDateText(s, col.dateOrder); return validDate(p) ? fmtDate(p) : null; }
     case 'DATETIME': { const p = parseDateText(s, col.dateOrder); return validDate(p) ? fmtDate(p) + ' ' + fmtTime(p) : null; }
     case 'TIME': { const p = parseTimeText(s); return p ? fmtTime(p) : null; }
-    case 'BOOL': { if (/^(true|1|yes|y|x)$/i.test(s)) return 'true'; if (/^(false|0|no|n)$/i.test(s)) return 'false'; return null; }
+    case 'BOOLEAN': { if (/^(true|1|yes|y|x)$/i.test(s)) return 'true'; if (/^(false|0|no|n)$/i.test(s)) return 'false'; return null; }
   }
   return s;
 }

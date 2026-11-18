@@ -230,7 +230,7 @@
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const TYPES = ['STRING', 'INT64', 'NUMERIC', 'FLOAT64', 'DATE', 'DATETIME', 'TIME', 'BOOL'];
+  const TYPES = ['STRING', 'INTEGER', 'NUMERIC', 'FLOAT', 'DATE', 'DATETIME', 'TIME', 'BOOLEAN'];
   const worker = new Worker('converter.js');
   let file = null, sheets = [], analysis = null, columns = [], outputs = {}, busy = false;
 
@@ -324,7 +324,7 @@
       [columns.length, 'columns'],
       [renamed, 'headers renamed'],
       [(typed.DATE || 0) + (typed.DATETIME || 0) + (typed.TIME || 0), 'date / time columns'],
-      [(typed.INT64 || 0) + (typed.NUMERIC || 0) + (typed.FLOAT64 || 0), 'number columns']
+      [(typed.INTEGER || 0) + (typed.NUMERIC || 0) + (typed.FLOAT || 0), 'number columns']
     ].map(([v, l]) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
 
     // global issue summary
