@@ -207,7 +207,7 @@
     <div class="codehead"><b>Upload in the BigQuery console</b></div>
     <ol class="how">
       <li>Open <a href="https://console.cloud.google.com/bigquery" target="_blank" rel="noopener">BigQuery</a>, click <b>⋮</b> next to your dataset, then <b>Create table</b>.</li>
-      <li>Create table from <b>Upload</b>, choose the <b>.csv.gz</b> file, set File format to <b>CSV</b>.</li>
+      <li>Create table from <b>Upload</b> and choose the <b>.csv.gz</b> file. <b>Then</b> set File format to <b>CSV</b>. The console often switches it to Avro when you pick a .gz file, which causes "Magic does not match" / "Source file defines the schema" errors.</li>
       <li>Type the table name. In Schema, leave Auto detect off, turn on <b>Edit as text</b> and paste the schema above.</li>
       <li>Open <b>Advanced options</b> and set <b>Header rows to skip = 1</b>.</li>
       <li>To add a later period to the same table, pick the existing table and set Write preference to <b>Append to table</b>.</li>
@@ -426,7 +426,9 @@
   };
 
   function schemaJson() {
-    return JSON.stringify(columns.filter(c => c.include).map(c => ({ name: c.name, type: c.type, mode: 'NULLABLE' })), null, 2);
+    // the console's "Edit as text" box and bq load expect the legacy type names
+    const LEGACY = { INT64: 'INTEGER', FLOAT64: 'FLOAT', BOOL: 'BOOLEAN' };
+    return JSON.stringify(columns.filter(c => c.include).map(c => ({ name: c.name, type: LEGACY[c.type] || c.type, mode: 'NULLABLE' })), null, 2);
   }
   function renderOutputs(m) {
     Object.values(outputs).forEach(u => URL.revokeObjectURL(u));

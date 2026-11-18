@@ -1,0 +1,432 @@
+[
+ {
+  "name": "Supplying_Plant",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Supplying_Plant_Desc",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Plant_Code",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Plant_Description",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "STO_Date",
+  "type": "DATE",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "STO_Number",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Delivery",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Material",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Item_Description",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Order_Quantity",
+  "type": "INTEGER",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Delivery_Quantity",
+  "type": "INTEGER",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Order_Status",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "DO_Status",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Actual_GI_Date",
+  "type": "DATE",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Remarks",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Courier_Code",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Courier_Description",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Storage_location",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Created_by",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "AWB",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Sales_Organization",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Sales_Org_Description",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Distrib_Channel",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Distrib_Channel_Desc",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Issuing_Storage_Location",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Issuing_Storage_Location_Desc",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "STO_Doc_Type",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "STO_Time",
+  "type": "TIME",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Order_Unit",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Created_on",
+  "type": "DATE",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Time",
+  "type": "TIME",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Sales_unit",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Ship_To_Code",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Ship_To_Desc",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Delivery_City",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Delivery_Address",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Delivery_Province",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Delivery_Country",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Delivery_Zip_Code",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "GI_Number",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "PGI_Quantity",
+  "type": "INTEGER",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "GI_Time",
+  "type": "TIME",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "GR_Number",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "GR_Quantity",
+  "type": "INTEGER",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "GR_Posting_Date",
+  "type": "DATE",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Received_Date",
+  "type": "DATE",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Received_Time",
+  "type": "TIME",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Received_By",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Total_Weight",
+  "type": "NUMERIC",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Total_Volume",
+  "type": "NUMERIC",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "PO_Reference",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Returns_Item",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Debit_Credit_ind",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Debit_Credit_ind_2",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Delivery_2",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Release_State",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Item",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Proof_of_delivery_status",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Picking_Status",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Item_2",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "HigherLevelItemBatch",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Weight_unit",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Gross_weight",
+  "type": "NUMERIC",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Cumul_gross_weight",
+  "type": "NUMERIC",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Weight_unit_2",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Volume",
+  "type": "NUMERIC",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Volume_unit",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Cumulative_volume",
+  "type": "NUMERIC",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Volume_unit_2",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "EAN_UPC",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Your_Reference",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Shipping_Instruction",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Receive_Date_POD",
+  "type": "DATE",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Receive_Time_POD",
+  "type": "TIME",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Item_Text",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "GI_User_Name",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Batch",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Supplier_Batch",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Expired_Date",
+  "type": "DATE",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "STO_Created_by",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "STO_Doc_Date",
+  "type": "DATE",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "STO_Item",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Delivery_Completed",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "GI_Year",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "GR_Year",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ },
+ {
+  "name": "Delete_Indicator",
+  "type": "STRING",
+  "mode": "NULLABLE"
+ }
+]
